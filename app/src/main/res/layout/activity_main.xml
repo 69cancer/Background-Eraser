@@ -1,0 +1,37 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:id="@+id/container"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    tools:context=".MainActivity" tools:ignore="MergeRootFrame" >
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+
+        android:layout_height="@dimen/abc_action_bar_default_height_material"
+        android:layout_gravity="left|top"
+        android:background="@color/abc_input_method_navigation_guard">
+
+        <ImageView
+            android:layout_width="32.0dip"
+            android:layout_height="fill_parent"
+            android:id="@+id/mainTitleAndBackButton"
+            android:layout_marginLeft="16.0dip"
+            android:layout_marginRight="12.0dip"
+            android:src="@drawable/ic_launcher" android:contentDescription="@string/app_name"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:id="@+id/mainTitleTextView"
+            android:textSize="18.0dip"
+            android:textColor="@color/bright_foreground_material_dark"
+            android:gravity="left|center"
+            android:text="@string/activity_name_main"/>
+        <View
+            android:background="#00000000"
+            android:layout_width="0.0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0" />
+
+    </LinearLayout>
+</FrameLayout>

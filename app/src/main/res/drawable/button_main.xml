@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="false">
+        <layer-list>
+            <item android:top="2.0dip" android:bottom="0.0dip">
+                <shape>
+                    <solid android:color="#10cccccc" />
+                    <corners android:radius="3.0dip" />
+                </shape>
+            </item>
+            <item android:top="2.0dip" android:bottom="0.5dip">
+                <shape>
+                    <solid android:color="#20cccccc" />
+                    <corners android:radius="3.5dip" />
+                </shape>
+            </item>
+            <item android:top="2.0dip" android:bottom="1.0dip">
+                <shape>
+                    <solid android:color="#30cccccc" />
+                    <corners android:radius="4.0dip" />
+                </shape>
+            </item>
+            <item android:top="2.0dip" android:bottom="1.5dip">
+                <shape>
+                    <solid android:color="#40cccccc" />
+                    <corners android:radius="4.5dip" />
+                </shape>
+            </item>
+            <item android:top="2.0dip" android:bottom="2.0dip">
+                <shape>
+                    <solid android:color="#ffffffff" />
+                    <corners android:radius="3.0dip" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item android:top="2.0dip" android:bottom="2.0dip">
+                <shape>
+                    <solid android:color="#ffe0e0e0" />
+                    <corners android:radius="3.0dip" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>
