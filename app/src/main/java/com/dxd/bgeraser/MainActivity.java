@@ -24,10 +24,12 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+
 import java.io.ByteArrayOutputStream;
 
-
 public class MainActivity extends ActionBarActivity {
+
+    public static Bitmap gImage;
 
 
     @Override
@@ -142,7 +144,7 @@ public class MainActivity extends ActionBarActivity {
     }
     public void performCrop(View view){
         ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
-        if(mImageView != null){
+        if(null!=mImageView.getDrawable()){
             try {
                 Intent intent = new Intent("com.android.camera.action.CROP");
                 Bitmap bitmap = ((BitmapDrawable) mImageView.getDrawable()).getBitmap();
@@ -159,9 +161,12 @@ public class MainActivity extends ActionBarActivity {
             }
         }
         else{
-            Toast.makeText(this, "Load an image to crop",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Load an image", Toast.LENGTH_LONG)
+                    .show();
+
+
         }
+
     }
 
     public Uri getImageUri(Context inContext, Bitmap inImage) {
@@ -171,6 +176,20 @@ public class MainActivity extends ActionBarActivity {
         return Uri.parse(path);
     }
 
+    public void imageProcessing(View view){
+        Intent intent = new Intent(this, ImageProcessing.class);
+        //myIntent.putExtra("key", value); //Optional parameters
+        ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
+        if(null!=mImageView.getDrawable()) {
+            Bitmap bitmap = ((BitmapDrawable) mImageView.getDrawable()).getBitmap();
+            gImage = bitmap;
+            this.startActivity(intent);
+        }
+        else{
+            Toast.makeText(this, "Load an image", Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
 
 
       /**
