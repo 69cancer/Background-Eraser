@@ -6,9 +6,12 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.Image;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -29,8 +32,10 @@ import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends ActionBarActivity {
 
-    public static Bitmap gImage;
 
+    private Bitmap croppedBitmap = null;
+    private Bitmap bitmap= null;
+    public static Bitmap gImg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,10 +51,12 @@ public class MainActivity extends ActionBarActivity {
 
 
 
-   /* @Override
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+
         return true;
     }
 
@@ -61,12 +68,20 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if(id == R.id.action_share){
+            android.support.v7.widget.ShareActionProvider mShareActionProvide = (android.support.v7.widget.ShareActionProvider) MenuItemCompat.getActionProvider(item);
+            if(mShareActionProvide != null) {
+                ImageView mImageView = (ImageView)findViewById(R.id.mainImg);
+                if(null!=mImageView.getDrawable()){
+                    createShareImageIntent();}
+                else Toast.makeText(this, "Load Something to share", Toast.LENGTH_LONG)
+                        .show();
+            } else Toast.makeText(this, "Share action provider is null", Toast.LENGTH_LONG)
+                    .show();
         }
 
         return super.onOptionsItemSelected(item);
-    }*/
+    }
    private static int RESULT_LOAD_IMG = 1;
    private static int REQUEST_IMAGE_CROP = 2;
    String imgDecodableString;
@@ -101,21 +116,44 @@ public class MainActivity extends ActionBarActivity {
                 ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
                 int targetW = mImageView.getWidth();
                 int targetH = mImageView.getHeight();
-                // Get the dimensions of the bitmap
-                BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                bmOptions.inJustDecodeBounds = true;
-                BitmapFactory.decodeFile(imgDecodableString, bmOptions);
-                int photoW = bmOptions.outWidth;
-                int photoH = bmOptions.outHeight;
 
-                // Determine how much to scale down the image
-                int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeFile(imgDecodableString, options);
 
-                // Decode the image file into a Bitmap sized to fill the View
-                bmOptions.inJustDecodeBounds = false;
-                bmOptions.inSampleSize = scaleFactor;
-                bmOptions.inPurgeable = true;
-                Bitmap bitmap = BitmapFactory.decodeFile(imgDecodableString, bmOptions);
+                int srcWidth = options.outWidth;
+                int srcHeight = options.outHeight;
+
+// Only scale if the source is big enough. This code is just trying to fit a image into a certain width.
+                if(targetW  > srcWidth)
+                    targetW  = srcWidth;
+
+
+
+// Calculate the correct inSampleSize/scale value. This helps reduce memory use. It should be a power of 2
+
+                int inSampleSize = 1;
+                while(srcWidth / 2 > targetW ){
+                    srcWidth /= 2;
+                    srcHeight /= 2;
+                    inSampleSize *= 2;
+                }
+
+                float desiredScale = (float) targetW  / srcWidth;
+
+// Decode with inSampleSize
+                options.inJustDecodeBounds = false;
+                options.inDither = false;
+                options.inSampleSize = inSampleSize;
+                options.inScaled = false;
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                Bitmap sampledSrcBitmap = BitmapFactory.decodeFile(imgDecodableString, options);
+
+// Resize
+                Matrix matrix = new Matrix();
+                matrix.postScale(desiredScale, desiredScale);
+                bitmap = Bitmap.createBitmap(sampledSrcBitmap, 0, 0, sampledSrcBitmap.getWidth(), sampledSrcBitmap.getHeight(), matrix, true);
+                sampledSrcBitmap = null;
                 mImageView.setImageBitmap(bitmap);
 
 
@@ -135,7 +173,7 @@ public class MainActivity extends ActionBarActivity {
         if (requestCode == REQUEST_IMAGE_CROP && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             //get the cropped bitmap
-            Bitmap croppedBitmap = extras.getParcelable("data");
+            croppedBitmap = extras.getParcelable("data");
             ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
             mImageView.setImageBitmap(croppedBitmap);
 
@@ -150,6 +188,8 @@ public class MainActivity extends ActionBarActivity {
                 Bitmap bitmap = ((BitmapDrawable) mImageView.getDrawable()).getBitmap();
                 Uri uri = getImageUri(this, bitmap);
                 intent.setDataAndType(uri, "image/*");
+                intent.putExtra("outputX", 200);
+                intent.putExtra("outputY", 200);
                 intent.putExtra("crop", "true");
                 intent.putExtra("return-data", true);
                 startActivityForResult(intent, REQUEST_IMAGE_CROP);
@@ -169,7 +209,7 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    public Uri getImageUri(Context inContext, Bitmap inImage) {
+    public  Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
@@ -182,13 +222,26 @@ public class MainActivity extends ActionBarActivity {
         ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
         if(null!=mImageView.getDrawable()) {
             Bitmap bitmap = ((BitmapDrawable) mImageView.getDrawable()).getBitmap();
-            gImage = bitmap;
+
+            gImg=bitmap;
             this.startActivity(intent);
         }
         else{
             Toast.makeText(this, "Load an image", Toast.LENGTH_LONG)
                     .show();
         }
+    }
+    private void createShareImageIntent(){
+            ImageView mImageView = (ImageView) findViewById(R.id.mainImg);
+            Bitmap cBitmap =((BitmapDrawable) mImageView.getDrawable()).getBitmap();
+            Uri sUri=getImageUri(this,cBitmap);
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            shareIntent.putExtra(Intent.EXTRA_STREAM,sUri );
+            shareIntent.setType("image/jpeg");
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(shareIntent, "send"));
+
     }
 
 

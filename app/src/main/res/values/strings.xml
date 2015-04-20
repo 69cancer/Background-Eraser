@@ -8,6 +8,7 @@
     <string name="done">Done</string>
     <string name="crop_message">Click to crop</string>
     <string name="title_activity_image_processing">ImageProcessing</string>
-    <string name="hello_world">Hello world!</string>
-
+    <string name="action_share">Share</string>
+    <string name="action_save">Save</string>
+    <string name="auto_bSize">Stroke Width</string>
 </resources>

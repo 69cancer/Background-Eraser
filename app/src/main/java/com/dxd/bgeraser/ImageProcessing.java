@@ -1,7 +1,10 @@
 package com.dxd.bgeraser;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BlurMaskFilter;
@@ -10,7 +13,13 @@ import android.graphics.Color;
 import android.graphics.EmbossMaskFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,114 +29,131 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.UUID;
 
 
-public class ImageProcessing extends ActionBarActivity {
+public class ImageProcessing extends ActionBarActivity  {
+    DrawView myDrawView;
+    private SeekBar seekBar = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(new MyView(this));
+        setContentView(R.layout.activity_image_processing);
+        myDrawView = (DrawView)findViewById(R.id.eraserImageView);
+         seekBar = (SeekBar)findViewById(R.id.eraserSeekBar);
+         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
-        mPaint = new Paint();
-        mPaint.setAntiAlias(true);
-        mPaint.setDither(true);
-        mPaint.setFilterBitmap(true);
-        mPaint.setColor(Color.parseColor("#000000"));
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeJoin(Paint.Join.ROUND);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPaint.setStrokeWidth(15);
+             @Override
+             public void onStopTrackingTouch(SeekBar seekBar) {
+                 // TODO Auto-generated method stub
+             }
+
+             @Override
+             public void onStartTrackingTouch(SeekBar seekBar) {
+                 // TODO Auto-generated method stub
+             }
+
+             @Override
+             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                 // TODO Auto-generated method stub
+                  myDrawView.setStrokeSize(progress);
+
+
+             }
+         });
 
     }
 
-    private Paint       mPaint;
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_image_processing, menu);
 
 
-    public class MyView extends View {
-        private static final float MINP = 0.25f;
-        private static final float MAXP = 0.75f;
-        private Bitmap  mBitmap;
-        private Bitmap  imgF;
-        private Canvas  mCanvas;
-        private Path    mPath;
-        private Paint   mBitmapPaint;
-
-
-        public MyView(Context c) {
-            super(c);
-            mPath = new Path();
-            mBitmapPaint = new Paint(Paint.DITHER_FLAG);
-        }
-        @Override
-        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-            super.onSizeChanged(w, h, oldw, oldh);
-
-            mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-
-
-
-
-
-            mCanvas = new Canvas(mBitmap);
-
-
-        }
-        @Override
-        protected void onDraw(Canvas canvas) {
-
-            imgF =  Bitmap.createScaledBitmap(MainActivity.gImage, canvas.getWidth(), canvas.getHeight(), false);
-            canvas.drawColor(Color.parseColor("#000000"));
-            canvas.drawBitmap(imgF,0,0,null);
-            canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
-            canvas.drawPath(mPath, mPaint);
-        }
-        private float mX, mY;
-        private static final float TOUCH_TOLERANCE = 4;
-        private void touch_start(float x, float y) {
-            mPath.reset();
-            mPath.moveTo(x, y);
-            mX = x;
-            mY = y;
-        }
-        private void touch_move(float x, float y) {
-            float dx = Math.abs(x - mX);
-            float dy = Math.abs(y - mY);
-            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
-                mX = x;
-                mY = y;
-            }
-        }
-        private void touch_up() {
-            mPath.lineTo(mX, mY);
-            // commit the path to our offscreen
-            mCanvas.drawPath(mPath, mPaint);
-            // kill this so we don't double draw
-            mPath.reset();
-        }
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            float x = event.getX();
-            float y = event.getY();
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    touch_start(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    touch_move(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    touch_up();
-                    invalidate();
-                    break;
-            }
-            return true;
-        }
+        return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if(id == R.id.action_save) {
+            saveImage();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+     private void  saveImage(){
+        //save drawing
+        AlertDialog.Builder saveDialog = new AlertDialog.Builder(this);
+        saveDialog.setTitle("Save Image");
+        saveDialog.setMessage("Save Image to device Gallery?");
+        saveDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener(){
+            private FileOutputStream fOut;
+
+            public void onClick(DialogInterface dialog, int which){
+                //save drawing
+
+                Bitmap well = myDrawView.getBitmap();
+                Bitmap save = Bitmap.createBitmap(320, 480, Bitmap.Config.ARGB_8888);
+                Paint paint = new Paint();
+                paint.setColor(Color.WHITE);
+                Canvas now = new Canvas(save);
+                now.drawRect(new Rect(0,0,320,480), paint);
+                now.drawBitmap(well, new Rect(0,0,well.getWidth(),well.getHeight()), new Rect(0,0,320,480), null);
+
+                //attempt to save
+                String imgSaved = MediaStore.Images.Media.insertImage(
+                        getContentResolver(), save,
+                        UUID.randomUUID().toString()+".png", "drawing");
+                //feedback
+                if(imgSaved!=null){
+                    Toast savedToast = Toast.makeText(getApplicationContext(),
+                            "Drawing saved to Gallery!", Toast.LENGTH_SHORT);
+                    savedToast.show();
+                }
+                else{
+                    Toast unsavedToast = Toast.makeText(getApplicationContext(),
+                            "Oops! Image could not be saved.", Toast.LENGTH_SHORT);
+                    unsavedToast.show();
+                }
+                myDrawView.destroyDrawingCache();
+            }
+        });
+        saveDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener(){
+            public void onClick(DialogInterface dialog, int which){
+                dialog.cancel();
+            }
+        });
+        saveDialog.show();
+    }
+
+    public void onClickUndo (View v) {
+
+
+    }
+
+    public void onClickRedo (View v) {
+
+    }
+
+
+
 
 
 }
